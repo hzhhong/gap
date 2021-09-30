@@ -38,10 +38,6 @@ func (s *Server) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		StatusCode:     http.StatusOK,
 	}
 
-	for i := len(s.pipeline); i > 0; i-- {
-		s.entry = s.pipeline[i-1](s.entry)
-	}
-
 	s.entry(s.Context)
 }
 
@@ -70,5 +66,10 @@ func (s *Server) Use(m ...Middleware) {
 
 // Run 启动Server监听
 func (s *Server) Run(addr string) {
+
+	// build pipeline
+	for i := len(s.pipeline); i > 0; i-- {
+		s.entry = s.pipeline[i-1](s.entry)
+	}
 	log.Fatal(http.ListenAndServe(addr, s))
 }
