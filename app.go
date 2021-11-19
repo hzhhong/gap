@@ -8,12 +8,14 @@ import (
 	"sync"
 	"syscall"
 
+	logx "github.com/hzhhong/gap/log"
 	"golang.org/x/sync/errgroup"
 )
 
 type options struct {
 	ctx     context.Context
 	servers []*Server
+	logger  logx.Logger
 }
 
 type Option func(*options)
@@ -27,7 +29,8 @@ type App struct {
 // New App
 func NewApp(opts ...Option) *App {
 	options := options{
-		ctx: context.Background(),
+		ctx:    context.Background(),
+		logger: logx.DefaultLogger,
 	}
 
 	for _, o := range opts {
@@ -44,6 +47,11 @@ func NewApp(opts ...Option) *App {
 // Servers 添加Server
 func Servers(srv ...*Server) Option {
 	return func(o *options) { o.servers = srv }
+}
+
+// Servers 添加logger
+func Logger(logger logx.Logger) Option {
+	return func(o *options) { o.logger = logger }
 }
 
 // Stop gracefully stops the application.

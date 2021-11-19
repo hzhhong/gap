@@ -3,8 +3,10 @@ package gap
 import (
 	"context"
 	"errors"
-	"log"
+	"fmt"
 	"net/http"
+
+	logx "github.com/hzhhong/gap/log"
 )
 
 type Server struct {
@@ -14,18 +16,18 @@ type Server struct {
 }
 
 // Default	Server默认实现
-func Default(name string, addr string) *Server {
-	srv := RawSrv(name, addr)
+func Default(name string, addr string, logger logx.Logger) *Server {
+	srv := RawSrv(name, addr, logger)
 
-	srv.Use(Router(), Logger())
+	srv.Use(RouterProcessor(), LoggerProcessor())
 	return srv
 }
 
 // Default	Server默认实现
-func RawSrv(name string, addr string) *Server {
+func RawSrv(name string, addr string, logger logx.Logger) *Server {
 	srv := &Server{
 		name:        name,
-		HttpHandler: NewHttpHandler(name),
+		HttpHandler: NewHttpHandler(name, logger),
 		HttpServer:  &http.Server{Addr: addr},
 	}
 	return srv
@@ -60,7 +62,7 @@ func (s *Server) Start() error {
 	s.HttpHandler.BuildPipeline()
 	s.HttpServer.Handler = s.HttpHandler
 
-	log.Printf("[HTTP] server [%s] listening on: %s", s.name, s.HttpServer.Addr)
+	s.HttpHandler.Context.logger.Log(logx.LevelInfo, "msg", fmt.Sprintf("[HTTP] server [%s] listening on: %s", s.name, s.HttpServer.Addr))
 	if err := s.HttpServer.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
@@ -70,7 +72,7 @@ func (s *Server) Start() error {
 // Stop
 func (s *Server) Stop(ctx context.Context) error {
 	err := s.HttpServer.Shutdown(ctx)
-	log.Printf("Server [%s] Exited Properly", s.name)
+	s.HttpHandler.Context.logger.Log(logx.LevelInfo, "msg", fmt.Sprintf("Server [%s] Exited Properly", s.name))
 	return err
 }
 

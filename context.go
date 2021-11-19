@@ -1,6 +1,10 @@
 package gap
 
-import "net/http"
+import (
+	"net/http"
+
+	logx "github.com/hzhhong/gap/log"
+)
 
 type HandlerFunc func(*Context)
 
@@ -10,4 +14,5 @@ type Context struct {
 
 	ResponseWriter *ResponseWriter
 	Request        *http.Request
+	logger         logx.Logger
 }

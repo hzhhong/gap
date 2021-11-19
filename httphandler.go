@@ -1,6 +1,10 @@
 package gap
 
-import "net/http"
+import (
+	"net/http"
+
+	logx "github.com/hzhhong/gap/log"
+)
 
 type HttpHandler struct {
 	Context  *Context
@@ -8,12 +12,13 @@ type HttpHandler struct {
 	entry    MiddlewareHandler
 }
 
-func NewHttpHandler(srvname string) *HttpHandler {
+func NewHttpHandler(srvname string, logger logx.Logger) *HttpHandler {
 	h := &HttpHandler{
 		pipeline: make([]Middleware, 0, 2),
 		Context: &Context{
 			Router:  make(map[string]HandlerFunc),
 			SrvName: srvname,
+			logger:  logger,
 		},
 	}
 	return h

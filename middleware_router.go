@@ -1,6 +1,6 @@
 package gap
 
-func Router() Middleware {
+func RouterProcessor() Middleware {
 	return func(next MiddlewareHandler) MiddlewareHandler {
 		return func(ctx *Context) {
 
