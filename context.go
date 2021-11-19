@@ -5,7 +5,8 @@ import "net/http"
 type HandlerFunc func(*Context)
 
 type Context struct {
-	Router map[string]HandlerFunc
+	SrvName string
+	Router  map[string]HandlerFunc
 
 	ResponseWriter *ResponseWriter
 	Request        *http.Request

@@ -1,75 +1,80 @@
 package gap
 
 import (
+	"context"
+	"errors"
 	"log"
 	"net/http"
 )
 
 type Server struct {
-	Context  *Context
-	pipeline []Middleware
-	entry    MiddlewareHandler
+	name        string
+	HttpServer  *http.Server
+	HttpHandler *HttpHandler
 }
 
 // Default	Server默认实现
-func Default() *Server {
-	srv := RawSrv()
+func Default(name string, addr string) *Server {
+	srv := RawSrv(name, addr)
 
 	srv.Use(Router(), Logger())
 	return srv
 }
 
 // Default	Server默认实现
-func RawSrv() *Server {
+func RawSrv(name string, addr string) *Server {
 	srv := &Server{
-		pipeline: make([]Middleware, 0, 2),
-		Context: &Context{
-			Router: make(map[string]HandlerFunc),
-		},
+		name:        name,
+		HttpHandler: NewHttpHandler(name),
+		HttpServer:  &http.Server{Addr: addr},
 	}
 	return srv
 }
 
-// ServeHTTP	Http请求处理入口
-func (s *Server) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-
-	s.Context.Request, s.Context.ResponseWriter = req, &ResponseWriter{
-		ResponseWriter: writer,
-		StatusCode:     http.StatusOK,
-	}
-
-	s.entry(s.Context)
-}
-
 // AddRouter	添加路由
-func (s *Server) AddRouter(path string, h HandlerFunc) {
-	s.Context.Router[path] = h
+func (s *Server) AddRouter(path string, f HandlerFunc) {
+	s.HttpHandler.AddRouter(path, f)
 }
 
 // UseSimple	创建管道简单中间件
 func (s *Server) UseSimple(h func(*Context)) {
 	middleware := func(next MiddlewareHandler) MiddlewareHandler {
 		return func(c *Context) {
-			h(s.Context)
+			h(c)
 			if next != nil {
-				next(s.Context)
+				next(c)
 			}
 		}
 	}
-	s.pipeline = append(s.pipeline, middleware)
+	s.HttpHandler.Use(middleware)
 }
 
 // Use	使用中间件
 func (s *Server) Use(m ...Middleware) {
-	s.pipeline = append(s.pipeline, m...)
+	s.HttpHandler.Use(m...)
 }
 
-// Run 启动Server监听
-func (s *Server) Run(addr string) {
+// Start 启动Server监听
+func (s *Server) Start() error {
 
-	// build pipeline
-	for i := len(s.pipeline); i > 0; i-- {
-		s.entry = s.pipeline[i-1](s.entry)
+	s.HttpHandler.BuildPipeline()
+	s.HttpServer.Handler = s.HttpHandler
+
+	log.Printf("[HTTP] server [%s] listening on: %s", s.name, s.HttpServer.Addr)
+	if err := s.HttpServer.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+		return err
 	}
-	log.Fatal(http.ListenAndServe(addr, s))
+	return nil
+}
+
+// Stop
+func (s *Server) Stop(ctx context.Context) error {
+	err := s.HttpServer.Shutdown(ctx)
+	log.Printf("Server [%s] Exited Properly", s.name)
+	return err
+}
+
+// RegisterOnShutdown
+func (s *Server) RegisterOnShutdown(f func()) {
+	s.HttpServer.RegisterOnShutdown(f)
 }
