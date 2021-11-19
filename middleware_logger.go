@@ -14,7 +14,6 @@ func LoggerProcessor() Middleware {
 			if next != nil {
 				next(ctx)
 			}
-			time.Since(begintime).Microseconds()
 
 			logx.With(ctx.logger,
 				"TimeStamp", time.Now().Format(time.RFC3339),
@@ -22,7 +21,9 @@ func LoggerProcessor() Middleware {
 			).Log(logx.LevelInfo,
 				"clientIp", ctx.Request.RemoteAddr,
 				"path", ctx.Request.URL.Path,
-				"statuscode", ctx.ResponseWriter.StatusCode)
+				"statuscode", ctx.ResponseWriter.StatusCode,
+				"latency", time.Since(begintime).Seconds(),
+			)
 
 		}
 	}
