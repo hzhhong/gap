@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
-	"sync/atomic"
 
 	"gopkg.in/yaml.v3"
 )
@@ -131,9 +130,7 @@ func readValue(values map[string]interface{}, path string) (interface{}, bool) {
 			return nil, false
 		}
 		if idx == last {
-			av := &atomic.Value{}
-			av.Store(value)
-			return av, true
+			return value, true
 		}
 		switch vm := value.(type) {
 		case map[string]interface{}:
