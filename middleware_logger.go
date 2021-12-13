@@ -15,7 +15,7 @@ func LoggerProcessor() Middleware {
 				next(ctx)
 			}
 
-			logx.With(ctx.logger,
+			logx.With(ctx.Logger,
 				"TimeStamp", time.Now().Format(time.RFC3339),
 				"server", ctx.SrvName,
 			).Log(logx.LevelInfo,

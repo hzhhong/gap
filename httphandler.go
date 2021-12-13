@@ -18,7 +18,7 @@ func NewHttpHandler(srvname string, logger logx.Logger) *HttpHandler {
 		Context: &Context{
 			Router:  make(map[string]HandlerFunc),
 			SrvName: srvname,
-			logger:  logger,
+			Logger:  logger,
 		},
 	}
 	return h

@@ -14,5 +14,5 @@ type Context struct {
 
 	ResponseWriter *ResponseWriter
 	Request        *http.Request
-	logger         logx.Logger
+	Logger         logx.Logger
 }
