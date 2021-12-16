@@ -62,7 +62,7 @@ func (s *Server) Start() error {
 	s.HttpHandler.BuildPipeline()
 	s.HttpServer.Handler = s.HttpHandler
 
-	s.HttpHandler.Context.Logger.Log(logx.LevelInfo, "msg", fmt.Sprintf("[HTTP] server [%s] listening on: %s", s.name, s.HttpServer.Addr))
+	s.HttpHandler.Logger.Log(logx.LevelInfo, "msg", fmt.Sprintf("[HTTP] server [%s] listening on: %s", s.name, s.HttpServer.Addr))
 	if err := s.HttpServer.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
@@ -72,7 +72,7 @@ func (s *Server) Start() error {
 // Stop
 func (s *Server) Stop(ctx context.Context) error {
 	err := s.HttpServer.Shutdown(ctx)
-	s.HttpHandler.Context.Logger.Log(logx.LevelInfo, "msg", fmt.Sprintf("Server [%s] Exited Properly", s.name))
+	s.HttpHandler.Logger.Log(logx.LevelInfo, "msg", fmt.Sprintf("Server [%s] Exited Properly", s.name))
 	return err
 }
 

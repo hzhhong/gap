@@ -2,24 +2,27 @@ package gap
 
 import (
 	"net/http"
+	"sync"
 
 	logx "github.com/hzhhong/gap/log"
 )
 
 type HttpHandler struct {
-	Context  *Context
 	pipeline []Middleware
 	entry    MiddlewareHandler
+
+	SrvName string
+	Router  map[string]HandlerFunc
+	Logger  logx.Logger
+	mu      sync.Mutex
 }
 
 func NewHttpHandler(srvname string, logger logx.Logger) *HttpHandler {
 	h := &HttpHandler{
 		pipeline: make([]Middleware, 0, 2),
-		Context: &Context{
-			Router:  make(map[string]HandlerFunc),
-			SrvName: srvname,
-			Logger:  logger,
-		},
+		SrvName:  srvname,
+		Logger:   logger,
+		Router:   make(map[string]HandlerFunc),
 	}
 	return h
 }
@@ -27,12 +30,18 @@ func NewHttpHandler(srvname string, logger logx.Logger) *HttpHandler {
 // ServeHTTP	Http请求处理入口
 func (h *HttpHandler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 
-	h.Context.Request, h.Context.ResponseWriter = req, &ResponseWriter{
-		ResponseWriter: writer,
-		StatusCode:     http.StatusOK,
+	ctx := &Context{
+		Router:  h.Router,
+		SrvName: h.SrvName,
+		Logger:  h.Logger,
+		Request: req,
+		ResponseWriter: &ResponseWriter{
+			ResponseWriter: writer,
+			StatusCode:     http.StatusOK,
+		},
 	}
 
-	h.entry(h.Context)
+	h.entry(ctx)
 }
 
 func (h *HttpHandler) Use(m ...Middleware) {
@@ -41,7 +50,9 @@ func (h *HttpHandler) Use(m ...Middleware) {
 
 // AddRouter	添加路由
 func (h *HttpHandler) AddRouter(path string, f HandlerFunc) {
-	h.Context.Router[path] = f
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.Router[path] = f
 }
 
 func (h *HttpHandler) BuildPipeline() {
